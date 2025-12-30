@@ -72,7 +72,7 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { Search, Book, Heart, X, BookOpen, Calendar, User, Info, Library, Loader2, Sparkles, Lightbulb, Tag, CheckCircle, Download, Upload, Filter, Trash2, Rocket, BrainCircuit, ArrowDownCircle, Star, BarChart3, Moon, Sun, Edit3, Save, Layers, Palette, ImagePlus, FileText, ClipboardPaste, AlertTriangle, Trophy, Share2, Shuffle, Flame, RefreshCw, Wand2, SortAsc, Quote, Clock, Play, Pause, Award, PieChart } from 'lucide-react';
+        import { Search, Settings, Book, Heart, X, BookOpen, Calendar, User, Info, Library, Loader2, Sparkles, Lightbulb, Tag, CheckCircle, Download, Upload, Filter, Trash2, Rocket, BrainCircuit, ArrowDownCircle, Star, BarChart3, Moon, Sun, Edit3, Save, Layers, Palette, ImagePlus, FileText, ClipboardPaste, AlertTriangle, Trophy, Share2, Shuffle, Flame, RefreshCw, Wand2, SortAsc, Quote, Clock, Play, Pause, Award, PieChart } from 'lucide-react';
         import { initializeApp } from "firebase/app";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, writeBatch, query as firestoreQuery, getDoc } from "firebase/firestore";
@@ -147,6 +147,8 @@
 
         export default function App() {
           const [user, setUser] = useState(null);
+          const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+          const [showSettings, setShowSettings] = useState(false);
 
           // App States
           const [query, setQuery] = useState('');
@@ -581,6 +583,7 @@
                         Bücher {myLibrary.length > 0 && <span className={`text-xs px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center ${activeTab === 'library' && !showStats ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-500 text-white'}`}>{myLibrary.length}</span>}
                       </button>
                     </nav>
+                    <button onClick={() => setShowSettings(true)} className={`p-2.5 rounded-xl transition-colors ${darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-indigo-600 text-indigo-100 hover:bg-indigo-500'}`}><Settings className="w-5 h-5" /></button>
                     <button onClick={() => setDarkMode(!darkMode)} className={`p-2.5 rounded-xl transition-colors ${darkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-indigo-600 text-indigo-100 hover:bg-indigo-500'}`}>{darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                   </div>
                 </div>
@@ -656,7 +659,7 @@
                     {books.length > 0 ? (
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-10">
-                          {books.map(b => <BookCard key={b.id} book={b} status={getLibraryStatus(b.id)} onSelect={() => setSelectedBook(b)} onToggleLibrary={() => getLibraryStatus(b.id).inLibrary ? removeFromLibrary(b.id) : addToLibrary(b)} onToggleRead={() => toggleReadStatus(b)} onUpdateData={(changes) => updateBookData(b.id, changes)} getThumbnail={b => b.aiCoverUrl || b.volumeInfo.imageLinks?.thumbnail || null} darkMode={darkMode} />)}
+                          {books.map(b => <BookCard key={b.id} book={b} status={getLibraryStatus(b.id)} onSelect={() => setSelectedBook(b)} onToggleLibrary={() => getLibraryStatus(b.id).inLibrary ? removeFromLibrary(b.id) : addToLibrary(b)} onToggleRead={() => toggleReadStatus(b)} onUpdateData={(changes) => updateBookData(b.id, changes)} getThumbnail={b => b.aiCoverUrl || b.volumeInfo.imageLinks?.thumbnail || null} darkMode={darkMode} apiKey={apiKey} />)}
                         </div>
                         <div className="flex justify-center pb-12"><button onClick={handleLoadMore} disabled={loadingMore} className={`flex items-center gap-2 px-8 py-3 rounded-full font-bold shadow-lg transition-all text-white ${aiSearchMode ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>{loadingMore ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />} Mehr</button></div>
                       </>
@@ -739,6 +742,7 @@
                             onUpdateData={(changes) => updateBookData(b.id, changes)}
                             getThumbnail={b => b.aiCoverUrl || b.volumeInfo.imageLinks?.thumbnail || null}
                             darkMode={darkMode}
+                            apiKey={apiKey}
                           />
                         ))}
                       </div>
@@ -764,6 +768,7 @@
                   onAddSequels={handleAddSequels}
                   getThumbnail={b => b.aiCoverUrl || b.volumeInfo.imageLinks?.thumbnail || null}
                   darkMode={darkMode}
+                  apiKey={apiKey}
                 />
               )}
             </div>
@@ -841,7 +846,35 @@
           );
         }
 
-        function BookCard({ book, onSelect, status, onToggleLibrary, onToggleRead, onUpdateData, getThumbnail, darkMode }) {
+        function SettingsModal({ apiKey, setApiKey, onClose, darkMode }) {
+            const [key, setKey] = useState(apiKey);
+            const handleSave = () => {
+                setApiKey(key);
+                localStorage.setItem('gemini_api_key', key);
+                onClose();
+            };
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+                    <div className={`w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in zoom-in-95 ${darkMode ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold flex items-center gap-2"><Settings className="w-6 h-6 text-indigo-500" /> Einstellungen</h3>
+                            <button onClick={onClose} className="p-2 opacity-50 hover:opacity-100"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold mb-2">Google Gemini API Key</label>
+                            <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="API Key eingeben..." className={`w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500 ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
+                            <p className="text-xs mt-2 opacity-70">Der Key wird lokal im Browser gespeichert.</p>
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={onClose} className={`px-4 py-2 rounded-lg font-medium ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>Abbrechen</button>
+                            <button onClick={handleSave} className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md">Speichern</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function BookCard({ book, onSelect, status, onToggleLibrary, onToggleRead, onUpdateData, getThumbnail, darkMode, apiKey }) {
           const thumbnail = getThumbnail(book);
           const { title, authors } = book.volumeInfo;
           const { inLibrary, isRead, rating } = status;
@@ -919,7 +952,7 @@
           );
         }
 
-        function BookModal({ book, onClose, status, onToggleLibrary, onToggleRead, onUpdateData, onSearch, onAddSequels, getThumbnail, darkMode }) {
+        function BookModal({ book, onClose, status, onToggleLibrary, onToggleRead, onUpdateData, onSearch, onAddSequels, getThumbnail, darkMode, apiKey }) {
           const info = book.volumeInfo;
           const thumbnail = getThumbnail(book);
           const { inLibrary, isRead, rating, userNote } = status;
