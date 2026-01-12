@@ -606,7 +606,21 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
           };
 
+          const resetLibraryFilters = () => {
+            setLibraryFilter('all');
+            setLibrarySearch('');
+            setSortOption('dateDesc');
+          };
+
           const filteredLibrary = getFilteredLibrary();
+          const libraryCounts = myLibrary.reduce((acc, book) => {
+            if (book.isRead) acc.read += 1;
+            else acc.unread += 1;
+            return acc;
+          }, { read: 0, unread: 0 });
+          const totalLibrary = myLibrary.length;
+          const readProgress = totalLibrary > 0 ? Math.round((libraryCounts.read / totalLibrary) * 100) : 0;
+          const hasActiveLibraryFilters = libraryFilter !== 'all' || librarySearch.trim().length > 0;
 
           return (
             <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
@@ -784,6 +798,30 @@
                           </>
                         )}
                       </div>
+                    </div>
+                    <div className={`mb-6 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <span className={`px-3 py-1 rounded-full border ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
+                          Treffer: {filteredLibrary.length}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full border ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
+                          Gelesen: {libraryCounts.read}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full border ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
+                          Ungelesen: {libraryCounts.unread}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full border ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
+                          Fortschritt: {readProgress}%
+                        </span>
+                      </div>
+                      {hasActiveLibraryFilters && (
+                        <button
+                          onClick={resetLibraryFilters}
+                          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border transition-colors ${darkMode ? 'border-slate-600 text-slate-200 hover:bg-slate-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                        >
+                          Filter zurücksetzen
+                        </button>
+                      )}
                     </div>
 
                     {recommendations.length > 0 && (
